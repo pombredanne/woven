@@ -75,8 +75,10 @@ def deploy_project():
     _make_local_sitesettings()
     created = deploy_files(local_dir, project_root, rsync_exclude=rsync_exclude)
     if not env.patch:
-        #hook the project into sys.path - #TODO make the python version not fixed
-        link_name = '/'.join([deployment_root(),'env',env.project_fullname,'lib/python2.6/site-packages',env.project_package_name])
+        #hook the project into sys.path
+        pyvers = run('python -V').split(' ')[1].split('.')[0:2] #Python x.x.x
+        sitepackages = ''.join(['lib/python',pyvers[0],'.',pyvers[1],'/site-packages'])
+        link_name = '/'.join([deployment_root(),'env',env.project_fullname,sitepackages,env.project_package_name])
         target = '/'.join([project_root,env.project_package_name])
         run(' '.join(['ln -s',target,link_name]))
         
@@ -144,7 +146,7 @@ def deploy_static():
             print "ERROR: Your ADMIN_MEDIA_PREFIX (Application media) must not be on the same path as your MEDIA_URL (User media)"
             sys.exit(1)
         admin = AdminMediaHandler('DummyApp')
-        local_dir = admin.media_dir
+        local_dir = admin.base_dir
         remote_dir =  ''.join([remote_dir,env.ADMIN_MEDIA_PREFIX])
     else:
         if env.MEDIA_URL and env.MEDIA_URL == env.STATIC_URL[:m_prefix]:

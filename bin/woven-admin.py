@@ -185,26 +185,23 @@ if __name__ == "__main__":
         os.environ['DJANGO_SETTINGS_MODULE'] =  settings_mod
         sys.argv.remove('setup.py')
         sys.argv.insert(0, woven_admin)
-        #be path friendly like manage.py
-        sys.path.append(os.getcwd())
+
 
     if inject:
         if settings_mod:
             os.environ['DJANGO_SETTINGS_MODULE'] = settings_mod
 
-        try:
-            from django.conf import settings
-            settings.INSTALLED_APPS += ('woven',)
-            
-            #switch to the settings module directory
-            proj = settings_mod.split('.')[0]
-            proj_mod = import_module(proj)
-            if not proj_mod:
-                sys.exit(0)
-            moddir = os.path.dirname(proj_mod.__file__)
-            os.chdir(moddir)
-        except ImportError, ValueError:
-            pass
+        from django.conf import settings
+        settings.INSTALLED_APPS += ('woven',)
+        
+        #switch to the settings module directory
+        proj = settings_mod.split('.')[0]
+        proj_mod = import_module(proj)
+        if not proj_mod:
+            sys.exit(0)
+        moddir = os.path.dirname(proj_mod.__file__)
+        os.chdir(moddir)
+
     
     if startproject:
         if not options.nosyncdb:

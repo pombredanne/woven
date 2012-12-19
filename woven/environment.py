@@ -7,7 +7,7 @@ from django.utils.importlib import import_module
 
 from fabric.context_managers import settings as fab_settings
 from fabric.context_managers import _setenv, cd
-from fabric.contrib.files import exists, comment, contains, sed, append
+from fabric.contrib.files import exists, comment, sed, append
 from fabric.decorators import runs_once, hosts
 from fabric.main import find_fabfile
 from fabric.network import normalize
@@ -192,7 +192,7 @@ def check_settings():
     Validate the users settings conf prior to deploy
     """
     valid=True
-    if not get_version() < '1.0':
+    if not get_version() >= '1.0':
         print "FABRIC ERROR: Woven is only compatible with Fabric < 1.0"
         valid = False
     if not env.MEDIA_ROOT or not env.MEDIA_URL:
@@ -221,7 +221,7 @@ def disable_virtualenvwrapper():
 
 def enable_virtualenvwrapper():
     profile_path = '/'.join([deployment_root(),'.profile'])
-    append('source /usr/local/bin/virtualenvwrapper.sh',profile_path)
+    append(profile_path, 'source /usr/local/bin/virtualenvwrapper.sh')
     
 
 def deployment_root():
@@ -406,8 +406,12 @@ def set_env(settings=None, setup_dir=''):
     #be used by woven or fabric
     env.MEDIA_ROOT = project_settings.MEDIA_ROOT
     env.MEDIA_URL = project_settings.MEDIA_URL
-    env.ADMIN_MEDIA_PREFIX = project_settings.ADMIN_MEDIA_PREFIX
-    if not env.STATIC_URL: env.STATIC_URL = project_settings.ADMIN_MEDIA_PREFIX
+    try:
+        env.ADMIN_MEDIA_PREFIX = project_settings.ADMIN_MEDIA_PREFIX
+    except AttributeError:
+        env.ADMIN_MEDIA_PREFIX = ''
+    if not env.STATIC_URL:
+        env.STATIC_URL = project_settings.ADMIN_MEDIA_PREFIX
     env.TEMPLATE_DIRS = project_settings.TEMPLATE_DIRS
     
     #Set the server /etc/timezone
@@ -416,15 +420,20 @@ def set_env(settings=None, setup_dir=''):
     env.INSTALLED_APPS = project_settings.INSTALLED_APPS
     
     #SSH key
-    if env.SSH_KEY_FILENAME: env.KEY_FILENAME = env.SSH_KEY_FILENAME
-    else: env.KEY_FILENAME = ''
-    
+    if not hasattr(env,'key_filename') and not env.key_filename and env.SSH_KEY_FILENAME:
+        env.key_filename = env.SSH_KEY_FILENAME
+    elif not hasattr(env,'key_filename'):
+        env.key_filename = None
+        
     #noinput
-    if not hasattr(env,'INTERACTIVE'): env.INTERACTIVE=True
-    if not hasattr(env,'verbosity'): env.verbosity=1
+    if not hasattr(env,'INTERACTIVE'):
+        env.INTERACTIVE = True
+    if not hasattr(env,'verbosity'):
+        env.verbosity = 1
     
     #overwrite existing settings
-    if not hasattr(env,'overwrite'):env.overwrite=False
+    if not hasattr(env,'overwrite'):
+        env.overwrite=False
     
     #South integration defaults
     env.nomigration = False

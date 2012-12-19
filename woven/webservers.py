@@ -197,7 +197,9 @@ def deploy_webconf():
             deployed += _deploy_webconf('/etc/nginx/sites-available','nginx-template.txt')
         elif 'gunicorn' in get_packages():
             deployed += _deploy_webconf('/etc/nginx/sites-available','nginx-gunicorn-template.txt')
-            
+        
+        if not exists('/var/www/nginx-default'):
+            sudo('mkdir /var/www/nginx-default')
         upload_template('woven/maintenance.html','/var/www/nginx-default/maintenance.html',use_sudo=True)
         sudo('chmod ugo+r /var/www/nginx-default/maintenance.html')
     else:
@@ -334,7 +336,8 @@ def start_webserver(server):
         with settings(warn_only=True):
             if env.verbosity:
                 print env.host,"STARTING apache2"
-            a = sudo("/etc/init.d/apache2 start")
+            #some issues with pty=True getting apache to start on ec2
+            a = sudo("/etc/init.d/apache2 start", pty=False)
             if env.verbosity:
                 print '',a
             
